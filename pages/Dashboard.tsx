@@ -5,7 +5,9 @@ import {
   Clock, 
   CheckCircle2, 
   TrendingUp, 
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -20,26 +22,44 @@ import {
 import StatsCard from '../components/StatsCard';
 import { getOrders } from '../services/mockData';
 import { Order, OrderStatus } from '../types';
-import { format, isToday, subDays, startOfDay } from 'date-fns';
-import { Link, useNavigate } from 'react-router-dom';
-// Fix: Import getActiveSettings from constants
+// Fix: Import date-fns functions correctly using subpath imports to resolve export issues
+import { format } from 'date-fns';
+import isToday from 'date-fns/isToday';
+import subDays from 'date-fns/subDays';
+import startOfDay from 'date-fns/startOfDay';
+import { useNavigate } from 'react-router-dom';
 import { STATUS_COLORS, getActiveSettings } from '../constants';
+import { getBusinessInsights } from '../services/aiService';
 
 interface DashboardProps {
   isDarkMode: boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
-  // Fix: Define settings by calling getActiveSettings()
   const settings = getActiveSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const navigate = useNavigate();
 
   const loadData = async () => {
     const data = await getOrders();
     setOrders(data);
     setLoading(false);
+  };
+
+  const handleGenerateAiInsights = async () => {
+    if (orders.length === 0) return;
+    setIsGeneratingAi(true);
+    try {
+      const insights = await getBusinessInsights(orders);
+      setAiInsights(insights || 'No specific insights available at this time.');
+    } catch (e) {
+      setAiInsights('Could not connect to AI advisor. Please try again later.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   useEffect(() => {
@@ -59,7 +79,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const totalDue = orders.reduce((sum, o) => sum + o.due, 0);
 
-  // Generate dynamic chart data for the last 7 days
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(new Date(), 6 - i);
     const dayStart = startOfDay(d).getTime();
@@ -119,6 +138,45 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
           icon={<AlertCircle size={24} />} 
           colorClass="bg-red-50 dark:bg-[#1c1111]"
         />
+      </div>
+
+      {/* AI Insights Section */}
+      <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-1 rounded-3xl shadow-xl">
+        <div className="bg-white dark:bg-[#161b22] p-8 rounded-[1.4rem] space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Sparkles size={24} />
+              </div>
+              <div>
+                <h3 className="font-black text-lg dark:text-white tracking-tight">AI Business Advisor</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Actionable insights from your business data</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleGenerateAiInsights}
+              disabled={isGeneratingAi}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-black text-xs hover:bg-indigo-700 transition-all disabled:opacity-50"
+            >
+              {isGeneratingAi ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              {aiInsights ? 'REFRESH INSIGHTS' : 'GET INSIGHTS'}
+            </button>
+          </div>
+
+          {aiInsights ? (
+            <div className="bg-gray-50 dark:bg-[#0d1117] p-6 rounded-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-500">
+              <div className="prose dark:prose-invert max-w-none text-sm font-medium leading-relaxed dark:text-gray-300">
+                {aiInsights.split('\n').map((line, i) => (
+                  <p key={i} className="mb-2 last:mb-0">{line}</p>
+                ))}
+              </div>
+            </div>
+          ) : !isGeneratingAi && (
+            <div className="flex items-center justify-center py-6 text-gray-400 dark:text-gray-600 text-sm italic">
+              Click the button above to analyze your performance with Gemini AI.
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -15,7 +15,11 @@ import {
   PlusCircle,
   Trash2
 } from 'lucide-react';
-import { format, isToday, isYesterday, startOfDay } from 'date-fns';
+// Fix: Import date-fns functions correctly using subpath imports to resolve export issues
+import { format } from 'date-fns';
+import isToday from 'date-fns/isToday';
+import isYesterday from 'date-fns/isYesterday';
+import startOfDay from 'date-fns/startOfDay';
 import { getOrders, updateOrder, deleteOrder } from '../services/mockData';
 import { Order, OrderStatus } from '../types';
 import { STATUS_COLORS, PRIORITY_COLORS, getActiveSettings } from '../constants';

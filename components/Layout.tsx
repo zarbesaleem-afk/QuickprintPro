@@ -16,7 +16,8 @@ import {
 import { getActiveSettings } from '../constants';
 import { getOrders } from '../services/mockData';
 import { OrderStatus } from '../types';
-import { isToday } from 'date-fns';
+// Fix: Import isToday from its subpath to resolve module export errors
+import isToday from 'date-fns/isToday';
 
 interface LayoutProps {
   onLogout: () => void;

@@ -17,7 +17,10 @@ import {
 } from 'lucide-react';
 import { getOrders } from '../services/mockData';
 import { Order, OrderStatus } from '../types';
-import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+// Fix: Import date-fns functions correctly using subpath imports to resolve export issues
+import { format, endOfMonth } from 'date-fns';
+import startOfMonth from 'date-fns/startOfMonth';
+import isWithinInterval from 'date-fns/isWithinInterval';
 
 const Reports: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
