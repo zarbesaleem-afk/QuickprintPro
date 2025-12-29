@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -42,7 +42,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route 
           path="/login" 
@@ -62,7 +62,7 @@ const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/login" />} />
         )}
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

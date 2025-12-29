@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -16,8 +15,7 @@ import {
 import { getActiveSettings } from '../constants';
 import { getOrders } from '../services/mockData';
 import { OrderStatus } from '../types';
-// Fix: Import isToday from its subpath to resolve module export errors
-import isToday from 'date-fns/isToday';
+import { format } from 'date-fns';
 
 interface LayoutProps {
   onLogout: () => void;
@@ -35,7 +33,11 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, isDarkMode, toggleDarkMode })
   const loadCounts = async () => {
     const orders = await getOrders();
     const active = orders.filter(o => o.status === OrderStatus.PENDING || o.status === OrderStatus.PROCESSING).length;
-    const completedToday = orders.filter(o => o.status === OrderStatus.COMPLETED && isToday(new Date(o.updatedAt))).length;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const completedToday = orders.filter(o => 
+      o.status === OrderStatus.COMPLETED && 
+      format(new Date(o.updatedAt), 'yyyy-MM-dd') === todayStr
+    ).length;
     setCounts({ total: orders.length, active, todayCompleted: completedToday });
   };
 
@@ -71,7 +73,6 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, isDarkMode, toggleDarkMode })
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-[#0d1117] text-gray-900 dark:text-gray-100 transition-colors duration-200">
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -79,7 +80,6 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, isDarkMode, toggleDarkMode })
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 w-64 bg-white dark:bg-[#161b22] border-r border-gray-200 dark:border-gray-800 z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -134,9 +134,7 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, isDarkMode, toggleDarkMode })
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
         <header className="h-16 bg-white dark:bg-[#161b22] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 lg:px-8 shrink-0 z-30">
           <div className="flex items-center gap-4">
             <button 
@@ -183,7 +181,6 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, isDarkMode, toggleDarkMode })
           </div>
         </header>
 
-        {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           <Outlet />
         </div>

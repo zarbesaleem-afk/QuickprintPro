@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   ShoppingCart, 
@@ -22,11 +21,7 @@ import {
 import StatsCard from '../components/StatsCard';
 import { getOrders } from '../services/mockData';
 import { Order, OrderStatus } from '../types';
-// Fix: Import date-fns functions correctly using subpath imports to resolve export issues
 import { format } from 'date-fns';
-import isToday from 'date-fns/isToday';
-import subDays from 'date-fns/subDays';
-import startOfDay from 'date-fns/startOfDay';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_COLORS, getActiveSettings } from '../constants';
 import { getBusinessInsights } from '../services/aiService';
@@ -68,20 +63,26 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
     return () => window.removeEventListener('ordersUpdated', loadData);
   }, []);
 
-  const todayOrders = orders.filter(o => isToday(new Date(o.createdAt)));
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayOrders = orders.filter(o => format(new Date(o.createdAt), 'yyyy-MM-dd') === todayStr);
   const pendingOrders = orders.filter(o => o.status === OrderStatus.PENDING || o.status === OrderStatus.PROCESSING);
+  
   const overdueOrders = orders.filter(o => {
-    const delivery = startOfDay(new Date(o.deliveryDate)).getTime();
-    const todayStart = startOfDay(new Date()).getTime();
-    return o.status !== OrderStatus.COMPLETED && delivery < todayStart;
+    const delivery = new Date(o.deliveryDate);
+    delivery.setHours(0, 0, 0, 0);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return o.status !== OrderStatus.COMPLETED && delivery.getTime() < todayStart.getTime();
   });
 
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
   const totalDue = orders.reduce((sum, o) => sum + o.due, 0);
 
   const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = subDays(new Date(), 6 - i);
-    const dayStart = startOfDay(d).getTime();
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    d.setHours(0, 0, 0, 0);
+    const dayStart = d.getTime();
     const dayEnd = dayStart + 86400000;
     
     const dayRevenue = orders
@@ -114,7 +115,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
         </div>
       </div>
 
-      {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard 
           label="Today's Orders" 
@@ -140,7 +140,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
         />
       </div>
 
-      {/* AI Insights Section */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-1 rounded-3xl shadow-xl">
         <div className="bg-white dark:bg-[#161b22] p-8 rounded-[1.4rem] space-y-6">
           <div className="flex items-center justify-between">
@@ -180,7 +179,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Weekly Chart */}
         <div className="lg:col-span-2 bg-white dark:bg-[#161b22] p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-lg dark:text-white tracking-tight">Revenue Analysis (7 Days)</h3>
@@ -227,7 +225,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
           </div>
         </div>
 
-        {/* Action Required */}
         <div className="bg-white dark:bg-[#161b22] p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col">
           <h3 className="font-black text-lg mb-6 flex items-center gap-3 dark:text-white tracking-tight">
             <AlertCircle className="text-red-500" size={22} />
@@ -245,7 +242,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
                     <span className="text-[9px] uppercase font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-lg">Overdue</span>
                   </div>
                   <div className="mt-3 flex justify-between items-center">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-bold">Delivery: {format(order.deliveryDate, 'dd MMM')}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-bold">Delivery: {format(new Date(order.deliveryDate), 'dd MMM')}</span>
                     <span className="text-sm font-black text-red-600">Rs {order.due.toLocaleString()}</span>
                   </div>
                 </div>
@@ -266,7 +263,6 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
         </div>
       </div>
 
-      {/* Recent Orders Table */}
       <div className="bg-white dark:bg-[#161b22] rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <h3 className="font-black text-lg dark:text-white tracking-tight">Latest Bookings</h3>
@@ -298,7 +294,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isDarkMode }) => {
                       {order.status}
                     </span>
                   </td>
-                  <td className="px-8 py-5 text-sm font-bold text-gray-600 dark:text-gray-400">{format(order.deliveryDate, 'dd MMM yyyy')}</td>
+                  <td className="px-8 py-5 text-sm font-bold text-gray-600 dark:text-gray-400">{format(new Date(order.deliveryDate), 'dd MMM yyyy')}</td>
                   <td className="px-8 py-5 text-sm font-black text-gray-900 dark:text-white text-right">Rs {order.total.toLocaleString()}</td>
                 </tr>
               ))}
